@@ -11,6 +11,7 @@ local ROWS = {
 	{ key = "fsr",           label = "Five second rule bar on the mana bar" },
 	{ key = "fogOff",        label = "Fog off (volumeFog 0)" },
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
+	{ key = "classColorHP",  label = "Class-coloured health bars on the default frames" },
 	{ key = "chatFilter",    label = "Hide chat containing banned phrases (friends exempt)" },
 	{ key = "minimap",       label = "Show the minimap button" },
 }
