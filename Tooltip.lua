@@ -6,20 +6,33 @@ local DP = DeebPlus
 
 local OFF_X, OFF_Y = 16, 8
 local driver = CreateFrame("Frame")
+local missFrames = 0
+local lastX, lastY = nil, nil
 
 local function follow()
 	if not DP.db or not DP.db.tooltipCursor then return end
 	local tt = GameTooltip
 	if not tt or not tt:IsShown() then return end
-	-- no slow fade: the moment it starts fading, or the mob under the mouse is gone, drop it
-	if tt:GetAlpha() < 1 then tt:Hide(); return end
+	-- no slow fade, but no flicker either: hide only once the mouse has clearly left
+	local owner = tt:GetOwner()
 	local _, unit = tt:GetUnit()
-	if unit and not UnitExists("mouseover") and not (tt:GetOwner() and tt:GetOwner() ~= UIParent and tt:GetOwner():IsMouseOver()) then
-		tt:Hide(); return
+	local gone
+	if unit then
+		gone = not UnitExists("mouseover")
+	elseif owner and owner ~= UIParent and owner.IsMouseOver then
+		gone = not owner:IsMouseOver()
+	end
+	if gone then
+		missFrames = missFrames + 1
+		if missFrames >= 4 then tt:Hide(); missFrames = 0; return end
+	else
+		missFrames = 0
 	end
 	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
 	-- world units (mouseover mobs) have UIParent as the owner; they count too
 	local x, y = GetCursorPosition()
+	if x == lastX and y == lastY and tt.dpAnchored then return end
+	lastX, lastY, tt.dpAnchored = x, y, true
 	local s = UIParent:GetEffectiveScale()
 	x, y = x / s + OFF_X, y / s + OFF_Y
 	-- keep it on screen
@@ -29,6 +42,10 @@ local function follow()
 	if y + h > sh then y = sh - h end
 	tt:ClearAllPoints()
 	tt:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x, y)
+end
+
+if GameTooltip and GameTooltip.HookScript then
+	GameTooltip:HookScript("OnShow", function(tt) tt.dpAnchored = false; missFrames = 0 end)
 end
 
 local function apply()
