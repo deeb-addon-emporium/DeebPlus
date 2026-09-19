@@ -11,6 +11,12 @@ local function follow()
 	if not DP.db or not DP.db.tooltipCursor then return end
 	local tt = GameTooltip
 	if not tt or not tt:IsShown() then return end
+	-- no slow fade: the moment it starts fading, or the mob under the mouse is gone, drop it
+	if tt:GetAlpha() < 1 then tt:Hide(); return end
+	local _, unit = tt:GetUnit()
+	if unit and not UnitExists("mouseover") and not (tt:GetOwner() and tt:GetOwner() ~= UIParent and tt:GetOwner():IsMouseOver()) then
+		tt:Hide(); return
+	end
 	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
 	-- world units (mouseover mobs) have UIParent as the owner; they count too
 	local x, y = GetCursorPosition()
