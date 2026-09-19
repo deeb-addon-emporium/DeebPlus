@@ -15,6 +15,8 @@ DP.defaults = {
 	tooltipCursor = true,     -- tooltip follows the mouse
 	fsr = true,               -- five second rule bar on the mana bar
 	lowVendor = true,         -- outline the cheapest-to-vendor bag slot
+	chatFilter = true,        -- drop chat lines with banned phrases (friends exempt)
+	banPhrases = "Asmon\nAsmon Layer",
 	minimap = true,
 	minimapAngle = 210,
 }

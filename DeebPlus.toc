@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: DeebPlus
 ## Notes: Quality of life bundle for WoW Forever: auto quest accept and turn-in, junk selling, fog off, tooltip on the mouse. /dp for settings.
-## Version: 1.0
+## Version: 1.1
 ## SavedVariables: DeebPlusDB
 Core.lua
 Quest.lua
@@ -9,4 +9,5 @@ Graphics.lua
 Tooltip.lua
 FiveSecondRule.lua
 LowVendor.lua
+ChatFilter.lua
 Config.lua

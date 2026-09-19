@@ -10,11 +10,13 @@ local ROWS = {
 	{ key = "fsr",           label = "Five second rule bar on the mana bar" },
 	{ key = "fogOff",        label = "Fog off (volumeFog 0)" },
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
+	{ key = "chatFilter",    label = "Hide chat containing banned phrases (friends exempt)" },
 	{ key = "minimap",       label = "Show the minimap button" },
 }
+local PHRASE_BOX_H = 110
 
 local cfg = CreateFrame("Frame", "DeebPlusConfig", UIParent, "BasicFrameTemplateWithInset")
-cfg:SetSize(420, 40 + #ROWS * 30 + 40)
+cfg:SetSize(420, 40 + #ROWS * 30 + 40 + PHRASE_BOX_H + 30)
 cfg:SetPoint("CENTER")
 cfg:SetMovable(true); cfg:EnableMouse(true); cfg:RegisterForDrag("LeftButton")
 cfg:SetScript("OnDragStart", cfg.StartMoving)
@@ -36,6 +38,34 @@ for i, row in ipairs(ROWS) do
 	boxes[#boxes + 1] = cb
 	y = y - 30
 end
+-- banned phrases: one per line
+local phraseLbl = cfg:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+phraseLbl:SetPoint("TOPLEFT", 16, y - 4); phraseLbl:SetText("Banned phrases, one per line (Enter saves):")
+local phraseBg = CreateFrame("Frame", nil, cfg, "BackdropTemplate")
+phraseBg:SetPoint("TOPLEFT", 16, y - 22); phraseBg:SetSize(388, PHRASE_BOX_H)
+if phraseBg.SetBackdrop then
+	phraseBg:SetBackdrop({ bgFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12, insets = { left = 3, right = 3, top = 3, bottom = 3 } })
+	phraseBg:SetBackdropColor(0, 0, 0, 0.6)
+end
+local phraseScroll = CreateFrame("ScrollFrame", "DeebPlusPhraseScroll", phraseBg, "UIPanelScrollFrameTemplate")
+phraseScroll:SetPoint("TOPLEFT", 6, -6); phraseScroll:SetPoint("BOTTOMRIGHT", -26, 6)
+local phraseBox = CreateFrame("EditBox", "DeebPlusPhraseBox", phraseScroll)
+phraseBox:SetMultiLine(true); phraseBox:SetAutoFocus(false); phraseBox:SetFontObject(ChatFontNormal)
+phraseBox:SetWidth(350); phraseBox:SetMaxLetters(4000)
+phraseScroll:SetScrollChild(phraseBox)
+local function savePhrases()
+	DP.db.banPhrases = phraseBox:GetText() or ""
+	DP.rebuildPhrases()
+	DP.msg("banned phrases saved")
+end
+-- Enter inserts a newline (multi-line box); Ctrl+Enter or losing focus saves
+phraseBox:SetScript("OnEnterPressed", function(self)
+	if IsControlKeyDown() then self:ClearFocus() else self:Insert("\n") end
+end)
+phraseBox:SetScript("OnEditFocusLost", savePhrases)
+phraseBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+phraseLbl:SetText("Banned phrases, one per line (click away or Ctrl+Enter to save):")
+
 local hint = cfg:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 hint:SetPoint("BOTTOMLEFT", 14, 12); hint:SetWidth(390); hint:SetJustifyH("LEFT")
 hint:SetText("/dp opens this. /dpd dumps quest state. /fsr previews the mana bar.")
@@ -43,6 +73,7 @@ hint:SetText("/dp opens this. /dpd dumps quest state. /fsr previews the mana bar
 function DP.refreshConfig()
 	if not DP.db then return end
 	for _, cb in ipairs(boxes) do cb:SetChecked(DP.db[cb.key] and true or false) end
+	if not phraseBox:HasFocus() then phraseBox:SetText(DP.db.banPhrases or "") end
 	if DeebPlusMinimapButton then DeebPlusMinimapButton:SetShown(DP.db.minimap ~= false) end
 end
 cfg:SetScript("OnShow", DP.refreshConfig)
