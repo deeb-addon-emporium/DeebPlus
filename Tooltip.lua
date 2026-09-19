@@ -7,14 +7,13 @@ local DP = DeebPlus
 local OFF_X, OFF_Y = 16, 8
 local driver = CreateFrame("Frame")
 local missFrames = 0
-local lastX, lastY = nil, nil
-local wasShown, anchored = false, false
+local wasShown = false
 
 local function follow()
 	if not DP.db or not DP.db.tooltipCursor then return end
 	local tt = GameTooltip
 	if not tt or not tt:IsShown() then wasShown = false; return end
-	if not wasShown then wasShown = true; anchored = false; missFrames = 0 end   -- fresh tooltip
+	if not wasShown then wasShown = true; missFrames = 0 end   -- fresh tooltip
 	-- no slow fade, but no flicker either: hide only once the mouse has clearly left
 	local owner = tt:GetOwner()
 	local _, unit = tt:GetUnit()
@@ -33,17 +32,16 @@ local function follow()
 	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
 	-- world units (mouseover mobs) have UIParent as the owner; they count too
 	local x, y = GetCursorPosition()
-	if x == lastX and y == lastY and anchored then return end
-	lastX, lastY, anchored = x, y, true
 	local s = UIParent:GetEffectiveScale()
 	x, y = x / s + OFF_X, y / s + OFF_Y
-	-- keep it on screen
 	local w, h = tt:GetWidth() or 0, tt:GetHeight() or 0
 	local sw, sh = UIParent:GetWidth(), UIParent:GetHeight()
 	if x + w > sw then x = sw - w end
 	if y + h > sh then y = sh - h end
-	tt:ClearAllPoints()
-	tt:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x, y)
+	-- Blizzard's default anchor is a BOTTOMRIGHT point on UIParent and it re-applies it on
+	-- every unit-tooltip refresh. Setting the SAME point replaces it; a different point would
+	-- be added to it and the tooltip would stretch between the two.
+	tt:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", x + w, y)
 end
 
 local function apply()
