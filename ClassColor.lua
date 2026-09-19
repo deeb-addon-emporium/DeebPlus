@@ -1,10 +1,21 @@
 -- DeebPlus class-coloured health bars on the default unit frames (player, target, focus,
 -- target-of-target, party, and the compact/raid-style frames via Blizzard's own CVar).
--- Only players get coloured; NPCs keep Blizzard's colour. Toggle: DP.db.classColorHP
+-- Players by class; NPCs by reaction (red / yellow / green, grey when tapped). Toggle: DP.db.classColorHP
 local DP = DeebPlus
 
+-- NPCs: by how they feel about you. Tapped by someone else = grey.
+local function reactionColor(unit)
+	if UnitIsTapDenied and UnitIsTapDenied(unit) then return 0.5, 0.5, 0.5 end
+	local r = UnitReaction(unit, "player")
+	if not r then return nil end
+	if r <= 3 then return 0.9, 0.2, 0.2 end        -- hostile
+	if r == 4 then return 1.0, 0.85, 0.2 end       -- neutral
+	return 0.2, 0.85, 0.2                           -- friendly
+end
+
 local function classColor(unit)
-	if not unit or not UnitExists(unit) or not UnitIsPlayer(unit) then return nil end
+	if not unit or not UnitExists(unit) then return nil end
+	if not UnitIsPlayer(unit) then return reactionColor(unit) end
 	local _, class = UnitClass(unit)
 	if not class then return nil end
 	local c
@@ -72,7 +83,7 @@ local function apply()
 		hooksecurefunc("TargetFrame_Update", function() repaintAll() end)
 	end
 	local f = CreateFrame("Frame")
-	for _, ev in ipairs({ "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "GROUP_ROSTER_UPDATE", "UNIT_TARGET", "UNIT_HEALTH", "UNIT_MAXHEALTH", "PORTRAITS_UPDATED" }) do
+	for _, ev in ipairs({ "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "GROUP_ROSTER_UPDATE", "UNIT_TARGET", "UNIT_HEALTH", "UNIT_MAXHEALTH", "PORTRAITS_UPDATED", "UNIT_FACTION", "UNIT_FLAGS" }) do
 		pcall(f.RegisterEvent, f, ev)
 	end
 	f:SetScript("OnEvent", function() if DP.db.classColorHP then repaintAll() end end)
