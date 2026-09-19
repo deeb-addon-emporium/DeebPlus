@@ -15,6 +15,7 @@ DP.defaults = {
 	tooltipCursor = true,     -- tooltip follows the mouse
 	fsr = true,               -- five second rule bar on the mana bar
 	lowVendor = true,         -- outline the cheapest-to-vendor bag slot
+	hideIssueReporter = true, -- keep the beta issue reporter off screen
 	classColorHP = true,      -- class-coloured health bars on the default frames
 	gossipSkip = true,        -- auto-pick "browse your goods" / "train me" on NPC menus
 	chatFilter = true,        -- drop chat lines with banned phrases (friends exempt)

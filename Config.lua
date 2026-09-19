@@ -12,6 +12,7 @@ local ROWS = {
 	{ key = "fogOff",        label = "Fog off (volumeFog 0)" },
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
 	{ key = "classColorHP",  label = "Class-coloured health bars on the default frames" },
+	{ key = "hideIssueReporter", label = "Hide the beta issue reporter" },
 	{ key = "chatFilter",    label = "Hide chat containing banned phrases (friends exempt)" },
 	{ key = "minimap",       label = "Show the minimap button" },
 }
@@ -130,4 +131,12 @@ f:SetScript("OnEvent", function()
 end)
 
 SLASH_DEEBPLUS1 = "/dp"
-SlashCmdList.DEEBPLUS = function() cfg:SetShown(not cfg:IsShown()) end
+SlashCmdList.DEEBPLUS = function(input)
+	local cmd, rest = string.match(strtrim(input or ""), "^(%S+)%s*(.*)$")
+	if cmd == "frames" then DP.listFrames(rest); return end
+	if cmd == "hide" and rest ~= "" then
+		DP.db.hideFrames = (DP.db.hideFrames or "") .. "\n" .. rest
+		DP.msg("will hide frames named like '" .. rest .. "'"); DP.apply("hideFrames"); return
+	end
+	cfg:SetShown(not cfg:IsShown())
+end
