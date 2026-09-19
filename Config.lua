@@ -6,6 +6,7 @@ local ROWS = {
 	{ key = "questWalk",     label = "Walk the NPC's quest list for me" },
 	{ key = "questTrivial",  label = "Accept trivial (gray) quests too" },
 	{ key = "vendorJunk",    label = "Sell gray junk at merchants" },
+	{ key = "autoRepair",    label = "Auto repair at any repair vendor" },
 	{ key = "gossipSkip",    label = "Auto-open vendor / trainer from NPC menus (hold Shift to see the menu)" },
 	{ key = "lowVendor",     label = "Outline the bag item worth the least to a vendor" },
 	{ key = "fsr",           label = "Five second rule bar on the mana bar" },

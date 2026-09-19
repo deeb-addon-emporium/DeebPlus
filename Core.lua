@@ -11,6 +11,7 @@ DP.defaults = {
 	questWalk = true,         -- walk the NPC's list for you
 	questTrivial = false,     -- accept gray quests too
 	vendorJunk = true,        -- sell gray junk at merchants
+	autoRepair = true,        -- repair everything at any repair vendor
 	fogOff = true,            -- volumeFog 0
 	tooltipCursor = true,     -- tooltip follows the mouse
 	fsr = true,               -- five second rule bar on the mana bar
