@@ -1,12 +1,13 @@
 -- DeebPlus threat percent on the stock nameplates.
--- Uses UnitDetailedThreatSituation("player", unit): isTanking, status, scaledPercent, rawPercent.
--- Shows scaledPercent (100 = you pull aggro). Colours, DPS view: green safe, orange close,
--- red you have it. Tank view (DP.db.threatTank) flips: green you have it, red you lost it.
--- Toggle: DP.db.threatPlates
+-- UnitDetailedThreatSituation returns SECRET values on this client: they can be shown and fed
+-- to widgets, never compared in addon code. So: the number is printed as-is, and the colour
+-- comes from a small StatusBar whose texture is a green-orange-red gradient. Filled to the
+-- percent, the bar's right edge lands on the colour that matches. No comparisons anywhere.
+-- Toggle: DP.db.threatPlates. DP.db.threatTank flips the gradient (red = losing it).
 local DP = DeebPlus
 
-local WARN = 80          -- orange from here up (DPS view)
-local texts = {}         -- unit -> FontString
+local BAR_W, BAR_H = 44, 6
+local widgets = {}         -- unit -> { text=, bar= }
 
 local function plateFor(unit)
 	if not C_NamePlate or not C_NamePlate.GetNamePlateForUnit then return nil end
@@ -14,51 +15,63 @@ local function plateFor(unit)
 	if ok then return plate end
 end
 
-local function textFor(unit)
+local function gradient(tex, tank)
+	if tank then
+		tex:SetGradient("HORIZONTAL", CreateColor(0.9, 0.2, 0.2, 1), CreateColor(0.2, 0.9, 0.2, 1))
+	else
+		tex:SetGradient("HORIZONTAL", CreateColor(0.2, 0.9, 0.2, 1), CreateColor(0.9, 0.2, 0.2, 1))
+	end
+end
+
+local function widgetFor(unit)
 	local plate = plateFor(unit)
 	if not plate then return nil end
 	local host = plate.UnitFrame or plate
-	local t = texts[unit]
-	if t and t:GetParent() ~= host then t:Hide(); t = nil end
-	if not t then
-		t = host:CreateFontString(nil, "OVERLAY", "GameFontNormalOutline")
+	local w = widgets[unit]
+	if w and w.bar:GetParent() ~= host then w.bar:Hide(); w.text:Hide(); w = nil end
+	if not w then
 		local health = host.healthBar or host.HealthBar or (host.HealthBarsContainer and host.HealthBarsContainer.healthBar)
+		local bar = CreateFrame("StatusBar", nil, host)
+		bar:SetSize(BAR_W, BAR_H)
+		bar:SetMinMaxValues(0, 100)
+		bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+		bar:SetFrameLevel((host:GetFrameLevel() or 0) + 2)
+		local bg = bar:CreateTexture(nil, "BACKGROUND")
+		bg:SetAllPoints(); bg:SetColorTexture(0, 0, 0, 0.5)
+		local text = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalOutline")
+		text:SetPoint("BOTTOM", bar, "TOP", 0, 1)
 		if health then
-			t:SetPoint("LEFT", health, "RIGHT", 4, 0)
+			bar:SetPoint("RIGHT", health, "LEFT", -6, 0)     -- left of the health bar
 		else
-			t:SetPoint("BOTTOM", host, "TOP", 0, 2)
+			bar:SetPoint("BOTTOMRIGHT", host, "TOPLEFT", -6, 2)
 		end
-		texts[unit] = t
+		w = { bar = bar, text = text, tex = bar:GetStatusBarTexture() }
+		widgets[unit] = w
 	end
-	return t
+	gradient(w.tex, DP.db and DP.db.threatTank)
+	return w
 end
 
-local function colour(isTanking, pct)
-	local tank = DP.db and DP.db.threatTank
-	if tank then
-		if isTanking then return 0.2, 0.9, 0.2 end
-		if pct and pct >= WARN then return 1, 0.6, 0.1 end
-		return 0.9, 0.2, 0.2
-	end
-	if isTanking then return 0.9, 0.2, 0.2 end
-	if pct and pct >= WARN then return 1, 0.6, 0.1 end
-	return 0.2, 0.9, 0.2
-end
+local function hide(w) if w then w.bar:Hide(); w.text:Hide() end end
 
 local function update(unit)
 	if not DP.db or not DP.db.threatPlates then return end
 	if not unit or not UnitExists(unit) then return end
-	local t = textFor(unit)
-	if not t then return end
+	local w = widgetFor(unit)
+	if not w then return end
 	if not UnitCanAttack("player", unit) or not UnitAffectingCombat(unit) or UnitIsDeadOrGhost(unit) then
-		t:Hide(); return
+		hide(w); return
 	end
-	local ok, isTanking, status, scaled, raw = pcall(UnitDetailedThreatSituation, "player", unit)
-	if not ok or status == nil then t:Hide(); return end
-	local pct = scaled or raw or 0
-	t:SetText(string.format("%d%%", pct))
-	t:SetTextColor(colour(isTanking, pct))
-	t:Show()
+	local ok, _isTanking, status, scaled, raw = pcall(UnitDetailedThreatSituation, "player", unit)
+	if not ok or status == nil then hide(w); return end
+	local pct = scaled
+	if pct == nil then pct = raw end
+	if pct == nil then hide(w); return end
+	-- secret-safe: format and SetValue accept secrets; nothing here compares them
+	local okv = pcall(w.bar.SetValue, w.bar, pct)
+	local okt = pcall(w.text.SetFormattedText, w.text, "%d%%", pct)
+	if not okv or not okt then hide(w); return end
+	w.bar:Show(); w.text:Show()
 end
 
 local function updateAll()
@@ -76,17 +89,15 @@ for _, e in ipairs({ "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED", "UNIT_T
 end
 f:SetScript("OnEvent", function(_, event, unit)
 	if event == "NAME_PLATE_UNIT_REMOVED" then
-		local t = texts[unit]; if t then t:Hide() end
-		texts[unit] = nil
-	elseif event == "NAME_PLATE_UNIT_ADDED" or event == "UNIT_THREAT_LIST_UPDATE" then
-		if unit and string.find(unit, "nameplate", 1, true) then update(unit) else updateAll() end
+		hide(widgets[unit]); widgets[unit] = nil
+	elseif (event == "NAME_PLATE_UNIT_ADDED" or event == "UNIT_THREAT_LIST_UPDATE") and unit and string.find(unit, "nameplate", 1, true) then
+		pcall(update, unit)
 	else
-		updateAll()
+		pcall(updateAll)
 	end
 end)
--- threat list events can lag a beat; a slow ticker keeps the numbers honest
-C_Timer.NewTicker(0.5, function() if DP.db and DP.db.threatPlates and InCombatLockdown() then updateAll() end end)
+C_Timer.NewTicker(0.5, function() if DP.db and DP.db.threatPlates and InCombatLockdown() then pcall(updateAll) end end)
 
 DP.register("threat", { apply = function()
-	if DP.db and not DP.db.threatPlates then for _, t in pairs(texts) do t:Hide() end else updateAll() end
+	if DP.db and not DP.db.threatPlates then for _, w in pairs(widgets) do hide(w) end else pcall(updateAll) end
 end })
