@@ -16,7 +16,6 @@ DP.defaults = {
 	fsr = true,               -- five second rule bar on the mana bar
 	lowVendor = true,         -- outline the cheapest-to-vendor bag slot
 	threatPlates = true,      -- threat % on stock nameplates
-	threatTank = false,       -- flip the colours for a tank
 	hideIssueReporter = true, -- keep the beta issue reporter off screen
 	classColorHP = true,      -- class-coloured health bars on the default frames
 	gossipSkip = true,        -- auto-pick "browse your goods" / "train me" on NPC menus
