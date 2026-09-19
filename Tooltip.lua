@@ -12,8 +12,7 @@ local function follow()
 	local tt = GameTooltip
 	if not tt or not tt:IsShown() then return end
 	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
-	local owner = tt:GetOwner()
-	if not owner or owner == UIParent then return end
+	-- world units (mouseover mobs) have UIParent as the owner; they count too
 	local x, y = GetCursorPosition()
 	local s = UIParent:GetEffectiveScale()
 	x, y = x / s + OFF_X, y / s + OFF_Y
