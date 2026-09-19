@@ -1,14 +1,37 @@
--- Anchor the game tooltip to the mouse instead of the bottom right corner.
+-- Tooltip follows the mouse. Done from our OWN OnUpdate, never from inside Blizzard's tooltip
+-- code: hooking GameTooltip_SetDefaultAnchor taints whatever button opened the tooltip, and on
+-- this client that blocked right-clicking items in bags. Only tooltips using the default anchor
+-- (ANCHOR_NONE, parked bottom-right) are moved; unit-frame / cursor-anchored ones are left alone.
 local DP = DeebPlus
-local hooked = false
-local function onSetDefaultAnchor(tt, parent)
+
+local OFF_X, OFF_Y = 16, 8
+local driver = CreateFrame("Frame")
+
+local function follow()
 	if not DP.db or not DP.db.tooltipCursor then return end
-	if tt ~= GameTooltip then return end
-	tt:SetOwner(parent or UIParent, "ANCHOR_CURSOR_RIGHT", 16, 8)
+	local tt = GameTooltip
+	if not tt or not tt:IsShown() then return end
+	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
+	local owner = tt:GetOwner()
+	if not owner or owner == UIParent then return end
+	local x, y = GetCursorPosition()
+	local s = UIParent:GetEffectiveScale()
+	x, y = x / s + OFF_X, y / s + OFF_Y
+	-- keep it on screen
+	local w, h = tt:GetWidth() or 0, tt:GetHeight() or 0
+	local sw, sh = UIParent:GetWidth(), UIParent:GetHeight()
+	if x + w > sw then x = sw - w end
+	if y + h > sh then y = sh - h end
+	tt:ClearAllPoints()
+	tt:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x, y)
 end
+
 local function apply()
-	if hooked or not hooksecurefunc then return end
-	hooksecurefunc("GameTooltip_SetDefaultAnchor", onSetDefaultAnchor)
-	hooked = true
+	if DP.db and DP.db.tooltipCursor then
+		driver:SetScript("OnUpdate", follow)
+	else
+		driver:SetScript("OnUpdate", nil)
+	end
 end
+
 DP.register("tooltip", { apply = apply })
