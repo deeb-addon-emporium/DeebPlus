@@ -12,6 +12,8 @@ local ROWS = {
 	{ key = "fogOff",        label = "Fog off (volumeFog 0)" },
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
 	{ key = "classColorHP",  label = "Class-coloured health bars on the default frames" },
+	{ key = "threatPlates",  label = "Threat % on nameplates (green safe, orange close, red you have it)" },
+	{ key = "threatTank",    label = "   ...I am the tank (flip the colours)" },
 	{ key = "hideIssueReporter", label = "Hide the beta issue reporter" },
 	{ key = "chatFilter",    label = "Hide chat containing banned phrases (friends exempt)" },
 	{ key = "minimap",       label = "Show the minimap button" },
