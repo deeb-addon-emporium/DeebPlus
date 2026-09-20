@@ -22,7 +22,9 @@ local function follow()
 	if unit then
 		gone = not UnitExists("mouseover")
 	elseif owner and owner ~= UIParent and owner.IsMouseOver then
-		gone = not owner:IsMouseOver()
+		-- secure frames (action bars in combat) refuse to be measured; treat that as "still here"
+		local ok, over = pcall(owner.IsMouseOver, owner)
+		gone = ok and not over
 	end
 	if gone then
 		missFrames = missFrames + 1
