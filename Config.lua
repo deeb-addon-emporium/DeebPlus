@@ -14,6 +14,7 @@ local ROWS = {
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
 	{ key = "classColorHP",  label = "Class-coloured health bars on the default frames" },
 	{ key = "threatPlates",  label = "Threat % on nameplates, left of the health bar" },
+	{ key = "errorCatcher",  label = "Catch Lua errors quietly (/dp errors to view and copy)" },
 	{ key = "hideIssueReporter", label = "Hide the beta issue reporter" },
 	{ key = "chatFilter",    label = "Hide chat containing banned phrases (friends exempt)" },
 	{ key = "minimap",       label = "Show the minimap button" },
@@ -136,6 +137,7 @@ SLASH_DEEBPLUS1 = "/dp"
 SlashCmdList.DEEBPLUS = function(input)
 	local cmd, rest = string.match(strtrim(input or ""), "^(%S+)%s*(.*)$")
 	if cmd == "frames" then DP.listFrames(rest); return end
+	if cmd == "errors" then DP.showErrors(); return end
 	if cmd == "hide" and rest ~= "" then
 		DP.db.hideFrames = (DP.db.hideFrames or "") .. "\n" .. rest
 		DP.msg("will hide frames named like '" .. rest .. "'"); DP.apply("hideFrames"); return
