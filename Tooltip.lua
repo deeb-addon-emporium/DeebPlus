@@ -8,12 +8,13 @@ local OFF_X, OFF_Y = 16, 8
 local driver = CreateFrame("Frame")
 local missFrames = 0
 local wasShown = false
+local badOwner = nil
 
 local function follow()
 	if not DP.db or not DP.db.tooltipCursor then return end
 	local tt = GameTooltip
 	if not tt or not tt:IsShown() then wasShown = false; return end
-	if not wasShown then wasShown = true; missFrames = 0 end   -- fresh tooltip
+	if not wasShown then wasShown = true; missFrames = 0; badOwner = nil end   -- fresh tooltip
 	-- no slow fade, but no flicker either: hide only once the mouse has clearly left
 	local owner = tt:GetOwner()
 	local _, unit = tt:GetUnit()
@@ -41,7 +42,11 @@ local function follow()
 	-- Blizzard's default anchor is a BOTTOMRIGHT point on UIParent and it re-applies it on
 	-- every unit-tooltip refresh. Setting the SAME point replaces it; a different point would
 	-- be added to it and the tooltip would stretch between the two.
-	tt:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", x + w, y)
+	-- some owners (the loot window) sit in an anchor chain the tooltip may not join; if the
+	-- client refuses the point, leave that tooltip where Blizzard put it and stop trying
+	if badOwner == tt:GetOwner() then return end
+	local ok = pcall(tt.SetPoint, tt, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", x + w, y)
+	if not ok then badOwner = tt:GetOwner() end
 end
 
 local function apply()
