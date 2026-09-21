@@ -81,5 +81,13 @@ local function apply()
 	end
 end
 
+-- "has been blocked from an action" popups: record which addon and which function
+local blk = CreateFrame("Frame")
+blk:RegisterEvent("ADDON_ACTION_BLOCKED")
+blk:RegisterEvent("ADDON_ACTION_FORBIDDEN")
+blk:SetScript("OnEvent", function(_, event, addon, func)
+	pcall(catch, string.format("%s: %s called %s (protected)", event == "ADDON_ACTION_FORBIDDEN" and "FORBIDDEN" or "BLOCKED", tostring(addon), tostring(func)))
+end)
+
 DP.showErrors = function() render(); win:Show() end
 DP.register("errors", { apply = apply })
