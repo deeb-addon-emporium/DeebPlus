@@ -17,6 +17,7 @@ DP.defaults = {
 	fsr = true,               -- five second rule bar on the mana bar
 	lowVendor = true,         -- outline the cheapest-to-vendor bag slot
 	threatPlates = true,      -- threat % on stock nameplates
+	questXP = true,           -- remember quest XP seen under the cap, show it at the cap
 	errorCatcher = true,      -- Lua errors to a quiet list + /dp errors, no popup
 	hideIssueReporter = true, -- keep the beta issue reporter off screen
 	classColorHP = true,      -- class-coloured health bars on the default frames
