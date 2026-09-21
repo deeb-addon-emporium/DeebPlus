@@ -51,10 +51,29 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:SetScript("OnEvent", function()
 	if type(DeebPlusDB) ~= "table" then DeebPlusDB = {} end
+	-- Settings have come up empty once (2026-09-21) for no reason we could find. Every character
+	-- keeps a mirror; if the account copy has no save stamp but the mirror does, restore it and say so.
+	if not DeebPlusDB._saved and type(DeebPlusMirror) == "table" and DeebPlusMirror._saved then
+		for k, v in pairs(DeebPlusMirror) do DeebPlusDB[k] = v end
+		C_Timer.After(4, function() DP.msg("|cffff8080settings came up empty|r - restored from this character's mirror (saved " .. date("%H:%M %d %b", DeebPlusMirror._saved) .. ")") end)
+	elseif not DeebPlusDB._saved then
+		C_Timer.After(4, function() DP.msg("fresh settings (first run, or they were reset)") end)
+	end
 	for k, v in pairs(DP.defaults) do
 		if DeebPlusDB[k] == nil then DeebPlusDB[k] = v end
 	end
 	DP.db = DeebPlusDB
+	DeebPlusDB._saved = time()
 	DP.apply()
 	C_Timer.After(2, function() DP.msg("loaded - /dp for settings") end)
+end)
+
+-- mirror the account settings into this character's own file at logout
+local lf = CreateFrame("Frame")
+lf:RegisterEvent("PLAYER_LOGOUT")
+lf:SetScript("OnEvent", function()
+	if type(DeebPlusDB) ~= "table" then return end
+	DeebPlusDB._saved = time()
+	DeebPlusMirror = {}
+	for k, v in pairs(DeebPlusDB) do DeebPlusMirror[k] = v end
 end)
