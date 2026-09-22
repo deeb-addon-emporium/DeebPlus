@@ -8,7 +8,7 @@
 local DP = DeebPlus
 
 local NAMES = { "SwingTimerRangedFrame", "SwingTimerMainHandFrame", "SwingTimerOffHandFrame" }
-local TEX = "Interface\\AddOns\\DeebPlus\\swingbar"
+local TEXDIR = "Interface\\AddOns\\DeebPlus\\swingbar"
 local done = {}
 
 local function cfg()
@@ -23,11 +23,12 @@ local function cfg()
 	return c
 end
 
--- texture is half colour, half red. Show [0, x] of it so that red = zone% of what is shown:
--- red fraction = (x - 0.5) / x  =>  x = 0.5 / (1 - zone)
-local function texRight(zonePct)
-	local z = math.max(0, math.min(0.6, (zonePct or 10) / 100))
-	return 0.5 / (1 - z)
+-- one image per zone size (swingbar00..swingbar50.tga, steps of 5): this client ignores
+-- texcoord cropping on a status bar fill, so the red slice has to be baked at the right width
+local function texFor(zonePct)
+	local z = math.floor((tonumber(zonePct) or 10) / 5 + 0.5) * 5
+	z = math.max(0, math.min(50, z))
+	return string.format("%s%02d", TEXDIR, z), z
 end
 
 local function skin(frame)
@@ -58,16 +59,14 @@ local function skin(frame)
 	end
 	-- size: the bar is anchored to the frame's corners, so resizing the frame resizes the bar
 	pcall(frame.SetSize, frame, c.w, c.h)
-	-- fill: our image with the red end
-	if not done[frame] then
-		pcall(bar.SetStatusBarTexture, bar, TEX)
-		done[frame] = true
+	-- fill: the image whose red end matches the zone setting
+	local tex, z = texFor(c.zone)
+	if done[frame] ~= tex then
+		pcall(bar.SetStatusBarTexture, bar, tex)
+		done[frame] = tex
 	end
-	local tex = bar:GetStatusBarTexture()
-	if tex then
-		pcall(tex.SetTexCoord, tex, 0, texRight(c.zone), 0, 1)
-		pcall(tex.SetVertexColor, tex, 1, 1, 1)     -- keep the image's own colours
-	end
+	local t = bar:GetStatusBarTexture()
+	if t then pcall(t.SetVertexColor, t, 1, 1, 1) end
 	pcall(bar.SetStatusBarColor, bar, c.r, c.g, c.b)   -- tints the white half only... if the client multiplies
 	-- a plain dark backdrop so the bar reads without the border
 	if not frame.dpBack then
@@ -112,7 +111,7 @@ DP.swingCmd = function(rest)
 		local w, h = string.match(v, "(%d+)%s+(%d+)")
 		if w then c.w, c.h = tonumber(w), tonumber(h); DP.msg("swing bar " .. w .. "x" .. h) else DP.msg("/dp swing size <width> <height>") end
 	elseif k == "zone" then
-		c.zone = tonumber(v) or 10; DP.msg("stop zone " .. c.zone .. "% of the bar")
+		c.zone = tonumber(v) or 10; local _, z = texFor(c.zone); DP.msg("stop zone " .. z .. "% of the bar (steps of 5)")
 	elseif k == "color" then
 		local r, g, b = string.match(v, "([%d.]+)%s+([%d.]+)%s+([%d.]+)")
 		if r then c.r, c.g, c.b = tonumber(r), tonumber(g), tonumber(b); DP.msg("swing colour set") else DP.msg("/dp swing color <r> <g> <b>  (0-1 each)") end
@@ -162,7 +161,7 @@ local function buildPanel()
 	end
 	slider("Width", "w", 80, 500, 2, "%d")
 	slider("Height", "h", 4, 40, 1, "%d")
-	slider("Stop zone", "zone", 0, 50, 1, "%d%% of the bar")
+	slider("Stop zone", "zone", 0, 50, 5, "%d%% of the bar")
 
 	-- colour
 	local colBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
