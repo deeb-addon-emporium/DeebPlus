@@ -138,7 +138,7 @@ local function buildPanel()
 	if panel then return panel end
 	local c = cfg()
 	panel = CreateFrame("Frame", "DeebPlusSwingPanel", UIParent, "BasicFrameTemplateWithInset")
-	panel:SetSize(340, 300); panel:SetPoint("CENTER", 120, 40); panel:SetFrameStrata("DIALOG")
+	panel:SetSize(340, 372); panel:SetPoint("CENTER", 120, 40); panel:SetFrameStrata("DIALOG")
 	panel:SetMovable(true); panel:EnableMouse(true); panel:RegisterForDrag("LeftButton")
 	panel:SetScript("OnDragStart", panel.StartMoving); panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
 	if panel.TitleText then panel.TitleText:SetText("Swing timer") end
@@ -200,7 +200,7 @@ local function buildPanel()
 	check("Show Blizzard's border", "hideBorder", true)
 
 	local hint = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	hint:SetPoint("BOTTOMLEFT", 16, 12); hint:SetWidth(300); hint:SetJustifyH("LEFT")
+	hint:SetPoint("TOPLEFT", 24, y - 6); hint:SetWidth(296); hint:SetJustifyH("LEFT")
 	hint:SetText("Stop zone: the red end of the bar. 3 s Auto Shot: 7% is about 0.2 s.")
 	return panel
 end
