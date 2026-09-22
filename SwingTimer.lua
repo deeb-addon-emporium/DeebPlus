@@ -189,7 +189,7 @@ local function buildPanel()
 		cb:SetChecked(val())
 		cb:SetScript("OnClick", function(self)
 			local on = self:GetChecked() and true or false
-			c[key] = invert and (not on) or on
+			if invert then c[key] = not on else c[key] = on end
 			apply()
 			if key == "enabled" and not on then DP.msg("swing reskin off - /reload to get Blizzard's look back") end
 		end)
