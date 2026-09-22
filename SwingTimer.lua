@@ -107,6 +107,7 @@ end)
 DP.swingCmd = function(rest)
 	local c = cfg()
 	local k, v = string.match(rest or "", "^(%S+)%s*(.*)$")
+	if k == nil or k == "ui" then DP.showSwingPanel(); return end
 	if k == "size" then
 		local w, h = string.match(v, "(%d+)%s+(%d+)")
 		if w then c.w, c.h = tonumber(w), tonumber(h); DP.msg("swing bar " .. w .. "x" .. h) else DP.msg("/dp swing size <width> <height>") end
@@ -128,3 +129,79 @@ DP.swingCmd = function(rest)
 end
 
 DP.register("swing", { apply = apply })
+
+-- ---------------------------------------------------------------------------
+-- Settings panel: sliders, colour picker, toggles. Opened from /dp (button) or /dp swing ui
+-- ---------------------------------------------------------------------------
+local panel
+local function buildPanel()
+	if panel then return panel end
+	local c = cfg()
+	panel = CreateFrame("Frame", "DeebPlusSwingPanel", UIParent, "BasicFrameTemplateWithInset")
+	panel:SetSize(340, 300); panel:SetPoint("CENTER", 120, 40); panel:SetFrameStrata("DIALOG")
+	panel:SetMovable(true); panel:EnableMouse(true); panel:RegisterForDrag("LeftButton")
+	panel:SetScript("OnDragStart", panel.StartMoving); panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
+	if panel.TitleText then panel.TitleText:SetText("Swing timer") end
+	tinsert(UISpecialFrames, "DeebPlusSwingPanel")
+	panel:Hide()
+
+	local y = -36
+	local function slider(label, key, lo, hi, step, fmt)
+		local s = CreateFrame("Slider", "DeebPlusSwing_" .. key, panel, "OptionsSliderTemplate")
+		s:SetPoint("TOPLEFT", 24, y); s:SetWidth(280); s:SetMinMaxValues(lo, hi); s:SetValueStep(step); s:SetObeyStepOnDrag(true)
+		_G[s:GetName() .. "Low"]:SetText(tostring(lo)); _G[s:GetName() .. "High"]:SetText(tostring(hi))
+		local text = _G[s:GetName() .. "Text"]
+		local function show(v) text:SetText(string.format("%s: " .. fmt, label, v)) end
+		s:SetValue(c[key]); show(c[key])
+		s:SetScript("OnValueChanged", function(self, v)
+			v = math.floor(v / step + 0.5) * step
+			c[key] = v; show(v); apply()
+		end)
+		y = y - 44
+		return s
+	end
+	slider("Width", "w", 80, 500, 2, "%d")
+	slider("Height", "h", 4, 40, 1, "%d")
+	slider("Stop zone", "zone", 0, 50, 1, "%d%% of the bar")
+
+	-- colour
+	local colBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	colBtn:SetSize(120, 22); colBtn:SetPoint("TOPLEFT", 24, y); colBtn:SetText("Bar colour")
+	local swatch = panel:CreateTexture(nil, "ARTWORK"); swatch:SetSize(22, 22); swatch:SetPoint("LEFT", colBtn, "RIGHT", 8, 0)
+	local function paintSwatch() swatch:SetColorTexture(c.r, c.g, c.b, 1) end
+	paintSwatch()
+	colBtn:SetScript("OnClick", function()
+		local function onChange()
+			local r, g, b = ColorPickerFrame:GetColorRGB()
+			c.r, c.g, c.b = r, g, b; paintSwatch(); apply()
+		end
+		local info = { r = c.r, g = c.g, b = c.b, hasOpacity = false, swatchFunc = onChange, cancelFunc = function(prev) if prev then c.r, c.g, c.b = prev.r, prev.g, prev.b; paintSwatch(); apply() end end }
+		if ColorPickerFrame.SetupColorPickerAndShow then ColorPickerFrame:SetupColorPickerAndShow(info)
+		else ColorPickerFrame.func = onChange; ColorPickerFrame.cancelFunc = info.cancelFunc; ColorPickerFrame:SetColorRGB(c.r, c.g, c.b); ColorPickerFrame:Show() end
+	end)
+	y = y - 32
+
+	local function check(label, key, invert)
+		local cb = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+		cb:SetPoint("TOPLEFT", 20, y); cb:SetSize(26, 26)
+		local t = cb.Text or cb:GetFontString(); if t then t:SetText(label) end
+		local function val() local v = c[key]; if invert then return not v end; return v ~= false end
+		cb:SetChecked(val())
+		cb:SetScript("OnClick", function(self)
+			local on = self:GetChecked() and true or false
+			c[key] = invert and (not on) or on
+			apply()
+			if key == "enabled" and not on then DP.msg("swing reskin off - /reload to get Blizzard's look back") end
+		end)
+		y = y - 28
+	end
+	check("Reskin the swing timer", "enabled")
+	check("Show the Ranged / Main Hand text", "hideText", true)
+	check("Show Blizzard's border", "hideBorder", true)
+
+	local hint = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	hint:SetPoint("BOTTOMLEFT", 16, 12); hint:SetWidth(300); hint:SetJustifyH("LEFT")
+	hint:SetText("Stop zone: the red end of the bar. 3 s Auto Shot: 7% is about 0.2 s.")
+	return panel
+end
+DP.showSwingPanel = function() buildPanel(); panel:SetShown(not panel:IsShown()) end

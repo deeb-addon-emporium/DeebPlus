@@ -23,7 +23,7 @@ local ROWS = {
 local PHRASE_BOX_H = 110
 
 local cfg = CreateFrame("Frame", "DeebPlusConfig", UIParent, "BasicFrameTemplateWithInset")
-cfg:SetSize(420, 40 + #ROWS * 30 + 40 + PHRASE_BOX_H + 30)
+cfg:SetSize(420, 40 + #ROWS * 30 + 40 + PHRASE_BOX_H + 60)
 cfg:SetPoint("CENTER")
 cfg:SetMovable(true); cfg:EnableMouse(true); cfg:RegisterForDrag("LeftButton")
 cfg:SetScript("OnDragStart", cfg.StartMoving)
@@ -72,6 +72,10 @@ end)
 phraseBox:SetScript("OnEditFocusLost", savePhrases)
 phraseBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 phraseLbl:SetText("Banned phrases, one per line (click away or Ctrl+Enter to save):")
+
+local swingBtn = CreateFrame("Button", nil, cfg, "UIPanelButtonTemplate")
+swingBtn:SetSize(160, 22); swingBtn:SetPoint("BOTTOMRIGHT", -16, 30); swingBtn:SetText("Swing timer settings...")
+swingBtn:SetScript("OnClick", function() DP.showSwingPanel() end)
 
 local hint = cfg:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 hint:SetPoint("BOTTOMLEFT", 14, 12); hint:SetWidth(390); hint:SetJustifyH("LEFT")
