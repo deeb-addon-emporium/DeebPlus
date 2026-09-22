@@ -140,6 +140,7 @@ SlashCmdList.DEEBPLUS = function(input)
 	if cmd == "frames" then DP.listFrames(rest); return end
 	if cmd == "errors" then DP.showErrors(); return end
 	if cmd == "xp" then DP.questXPLookup(rest); return end
+	if cmd == "swing" then DP.swingCmd(rest); return end
 	if cmd == "hide" and rest ~= "" then
 		DP.db.hideFrames = (DP.db.hideFrames or "") .. "\n" .. rest
 		DP.msg("will hide frames named like '" .. rest .. "'"); DP.apply("hideFrames"); return
