@@ -1,7 +1,9 @@
 -- DeebPlus auto ammo: at any vendor that sells ammo, top up to a target amount, matching the
 -- ranged weapon you have equipped (bow/crossbow = arrows, gun = bullets). Only above level 4.
 -- Buys the best ammo you can use (highest required level that is still <= your level).
--- Settings: DP.db.autoAmmo (on/off), DP.db.ammoTarget (how many to hold, default 1000)
+-- If you carry a quiver or ammo pouch it fills THAT: every slot to a full stack. With no
+-- quiver it falls back to DP.db.ammoTarget (default 1000).
+-- Settings: DP.db.autoAmmo (on/off), DP.db.ammoTarget
 local DP = DeebPlus
 
 local CLASS_PROJECTILE = (Enum and Enum.ItemClass and Enum.ItemClass.Projectile) or 6
@@ -29,6 +31,33 @@ local function neededAmmo()
 	return nil
 end
 
+local GetNumSlots     = C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots
+local GetFreeSlots    = C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots
+local GetSlotInfo     = C_Container and C_Container.GetContainerItemInfo
+local FAMILY_QUIVER, FAMILY_POUCH = 1, 2
+
+-- the quiver / ammo pouch bag id for this ammo type, or nil
+local function ammoBag(sub)
+	local wantFamily = (sub == SUB_ARROW) and FAMILY_QUIVER or FAMILY_POUCH
+	for bag = 1, (NUM_BAG_SLOTS or 4) do
+		local ok, free, family = pcall(GetFreeSlots, bag)
+		if ok and family and family ~= 0 and bit.band(family, wantFamily) ~= 0 then return bag end
+	end
+	return nil
+end
+
+-- how many of this ammo (by name) are in the bag, and how many slots it has
+local function bagAmmo(bag, name)
+	local count, slots = 0, GetNumSlots(bag) or 0
+	for s = 1, slots do
+		local info = GetSlotInfo and GetSlotInfo(bag, s)
+		if info and info.itemName == name and info.stackCount and not (issecretvalue and issecretvalue(info.stackCount)) then
+			count = count + info.stackCount
+		end
+	end
+	return count, slots
+end
+
 local function ammoCount()
 	local n = 0
 	local ok, c = pcall(GetInventoryItemCount, "player", AMMO_SLOT)
@@ -42,23 +71,27 @@ local function onMerchant()
 	if lvl <= 4 then return end
 	local sub, word = neededAmmo()
 	if not sub then return end
-	local have = ammoCount()
-	local target = tonumber(DP.db.ammoTarget) or 1000
-	if have >= target then return end
+	-- find the best ammo the vendor sells first, so the quiver fill knows which item to count
 	local n = GetMerchantNumItems and GetMerchantNumItems() or 0
-	local best, bestLvl, bestIdx, bestPrice, bestName
+	local best, bestLvl, bestIdx, bestName
 	for i = 1, n do
 		local link = GetMerchantItemLink(i)
-		local name, minLevel, classID, sc, price = facts(link)
+		local name, minLevel, classID, sc = facts(link)
 		if name and classID == CLASS_PROJECTILE and sc == sub and minLevel <= lvl then
 			if not best or minLevel > bestLvl then best, bestLvl, bestIdx, bestName = link, minLevel, i, name end
-			if best == link then
-				local _, _, mprice = GetMerchantItemInfo(i)
-				bestPrice = mprice
-			end
 		end
 	end
 	if not bestIdx then return end
+	local maxStack = select(8, (function() local fn = (C_Item and C_Item.GetItemInfo) or GetItemInfo; return fn(best) end)()) or 200
+	local have, target
+	local bag = ammoBag(sub)
+	if bag then
+		local inBag, slots = bagAmmo(bag, bestName)
+		have, target = inBag, slots * maxStack          -- fill the quiver: every slot a full stack
+	else
+		have, target = ammoCount(), tonumber(DP.db.ammoTarget) or 1000
+	end
+	if have >= target then return end
 	local want = target - have
 	local _, _, price, quantity = GetMerchantItemInfo(bestIdx)      -- quantity = items per purchase (stack sold as)
 	local per = (quantity and quantity > 0) and quantity or 1
