@@ -13,6 +13,7 @@ local ROWS = {
 	{ key = "fsr",           label = "Five second rule bar on the mana bar" },
 	{ key = "fogOff",        label = "Fog off (volumeFog 0)" },
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
+	{ key = "targetXP",      label = "Kill XP next to the target's level (below the cap)" },
 	{ key = "classColorHP",  label = "Class-coloured health bars on the default frames" },
 	{ key = "threatPlates",  label = "Threat % on nameplates, left of the health bar" },
 	{ key = "questXP",       label = "Remember quest XP seen on alts, show it when the game says 0" },

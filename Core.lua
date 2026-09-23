@@ -22,6 +22,7 @@ DP.defaults = {
 	questXP = true,           -- remember quest XP seen under the cap, show it at the cap
 	errorCatcher = true,      -- Lua errors to a quiet list + /dp errors, no popup
 	hideIssueReporter = true, -- keep the beta issue reporter off screen
+	targetXP = true,          -- kill XP next to the target's level, below the cap
 	classColorHP = true,      -- class-coloured health bars on the default frames
 	gossipSkip = true,        -- auto-pick "browse your goods" / "train me" on NPC menus
 	chatFilter = true,        -- drop chat lines with banned phrases (friends exempt)
