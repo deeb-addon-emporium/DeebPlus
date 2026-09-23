@@ -7,6 +7,7 @@ local ROWS = {
 	{ key = "questTrivial",  label = "Accept trivial (gray) quests too" },
 	{ key = "vendorJunk",    label = "Sell gray junk at merchants" },
 	{ key = "autoRepair",    label = "Auto repair at any repair vendor" },
+	{ key = "autoAmmo",      label = "Auto buy ammo at vendors, above level 4 (/dp ammo <amount>)" },
 	{ key = "gossipSkip",    label = "Auto-open vendor / trainer from NPC menus (hold Shift to see the menu)" },
 	{ key = "lowVendor",     label = "Outline the bag item worth the least to a vendor" },
 	{ key = "fsr",           label = "Five second rule bar on the mana bar" },
@@ -145,6 +146,7 @@ SlashCmdList.DEEBPLUS = function(input)
 	if cmd == "errors" then DP.showErrors(); return end
 	if cmd == "xp" then DP.questXPLookup(rest); return end
 	if cmd == "swing" then DP.swingCmd(rest); return end
+	if cmd == "ammo" then DP.ammoCmd(rest); return end
 	if cmd == "hide" and rest ~= "" then
 		DP.db.hideFrames = (DP.db.hideFrames or "") .. "\n" .. rest
 		DP.msg("will hide frames named like '" .. rest .. "'"); DP.apply("hideFrames"); return
