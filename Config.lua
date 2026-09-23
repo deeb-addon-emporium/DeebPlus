@@ -11,6 +11,7 @@ local ROWS = {
 	{ key = "gossipSkip",    label = "Auto-open vendor / trainer from NPC menus (hold Shift to see the menu)" },
 	{ key = "lowVendor",     label = "Outline the bag item worth the least to a vendor" },
 	{ key = "fsr",           label = "Five second rule bar on the mana bar" },
+	{ key = "statusText",    label = "Always show health and mana numbers on frames" },
 	{ key = "fogOff",        label = "Fog off (volumeFog 0)" },
 	{ key = "tooltipCursor", label = "Tooltip follows the mouse" },
 	{ key = "targetXP",      label = "Kill XP next to the target's level (below the cap)" },

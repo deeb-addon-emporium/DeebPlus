@@ -7,5 +7,10 @@ local function apply()
 	if cur ~= nil and cur ~= want then
 		pcall(SetCVar, "volumeFog", want)
 	end
+	-- always show health and mana numbers on the player and target frames
+	if DP.db.statusText then
+		pcall(SetCVar, "statusText", "1")
+		pcall(SetCVar, "statusTextDisplay", "BOTH")      -- number and percent
+	end
 end
 DP.register("graphics", { apply = apply })
