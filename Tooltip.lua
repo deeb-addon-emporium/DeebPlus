@@ -10,6 +10,7 @@ local missFrames = 0
 local wasShown = false
 local badOwner = nil
 
+local place   -- forward
 local function follow()
 	if not DP.db or not DP.db.tooltipCursor then return end
 	local tt = GameTooltip
@@ -34,21 +35,29 @@ local function follow()
 	end
 	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
 	-- world units (mouseover mobs) have UIParent as the owner; they count too
+	place(tt)
+end
+
+place = function(tt)
+	if tt:GetAnchorType() ~= "ANCHOR_NONE" then return end
 	local x, y = GetCursorPosition()
-	local s = UIParent:GetEffectiveScale()
-	x, y = x / s + OFF_X, y / s + OFF_Y
+	local sc = UIParent:GetEffectiveScale()
+	x, y = x / sc + OFF_X, y / sc + OFF_Y
 	local w, h = tt:GetWidth() or 0, tt:GetHeight() or 0
 	local sw, sh = UIParent:GetWidth(), UIParent:GetHeight()
 	if x + w > sw then x = sw - w end
 	if y + h > sh then y = sh - h end
-	-- Blizzard's default anchor is a BOTTOMRIGHT point on UIParent and it re-applies it on
-	-- every unit-tooltip refresh. Setting the SAME point replaces it; a different point would
-	-- be added to it and the tooltip would stretch between the two.
-	-- some owners (the loot window) sit in an anchor chain the tooltip may not join; if the
-	-- client refuses the point, leave that tooltip where Blizzard put it and stop trying
 	if badOwner == tt:GetOwner() then return end
 	local ok = pcall(tt.SetPoint, tt, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", x + w, y)
 	if not ok then badOwner = tt:GetOwner() end
+end
+
+-- move it the instant it appears, so it never draws bottom-right for a frame first.
+-- Touches only the tooltip's own anchor, never the frame that opened it.
+if GameTooltip and GameTooltip.HookScript then
+	GameTooltip:HookScript("OnShow", function(tt)
+		if DP.db and DP.db.tooltipCursor then wasShown = true; missFrames = 0; badOwner = nil; pcall(place, tt) end
+	end)
 end
 
 local function apply()
